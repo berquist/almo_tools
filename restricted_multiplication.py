@@ -29,7 +29,9 @@ def make_indices_ao(nbasis_frgm):
     l = []
     nfrgm = len(nbasis_frgm)
     for i in range(nfrgm):
-        indices = list(range(sum(nbasis_frgm[:i]), sum(nbasis_frgm[:i]) + nbasis_frgm[i]))
+        print(sum(nbasis_frgm[:i]), sum(nbasis_frgm[:i]) + nbasis_frgm[i])
+        indices = list(range(sum(nbasis_frgm[:i]),
+                             sum(nbasis_frgm[:i]) + nbasis_frgm[i]))
         l.append(np.array(indices))
     return l
 
@@ -277,8 +279,8 @@ if __name__ == '__main__':
     rhs5_m = np.dot(C[:, :nocc].T, np.dot(integrals, C[:, nocc:]))
     rhs5_v = np.empty(shape=product(rhs5_m.shape))
     repack_matrix_to_vector(rhs5_v, rhs5_m)
-    # print(rhs5_m)
-    print(rhs5_v)
+    print(rhs5_m)
+    # print(rhs5_v)
 
     print(r"6. run over all {\mu\nu}, run over fragment {ia}, take all {ia}")
     # this currently doesn't recombine the {ia} like it should
@@ -286,8 +288,8 @@ if __name__ == '__main__':
         rhs6_m = np.dot(C[:, indices_mo_occ[idx]].T, np.dot(integrals, C[:, indices_mo_virt[idx]]))
         rhs6_v = np.empty(shape=product(rhs6_m.shape))
         repack_matrix_to_vector(rhs6_v, rhs6_m)
-        # print(rhs6_m)
-        print(rhs6_v)
+        print(rhs6_m)
+        # print(rhs6_v)
 
     print(r"7. run over fragment {\mu\nu}, run over all {ia}, take all {ia}")
     # this currently doesn't recombine the {ia} like it should
@@ -296,8 +298,8 @@ if __name__ == '__main__':
         rhs7_m = np.dot(C[indices_ao[idx], :nocc].T, np.dot(integrals_frgm, C[indices_ao[idx], nocc:]))
         rhs7_v = np.empty(shape=product(rhs7_m.shape))
         repack_matrix_to_vector(rhs7_v, rhs7_m)
-        # print(rhs7_m)
-        print(rhs7_v)
+        print(rhs7_m)
+        # print(rhs7_v)
 
     print(r"7a. zero non-fragment {\mu\nu}, run over all {ia}, take all {ia}")
     # Do everything at once.

@@ -146,31 +146,6 @@ indices make_indices_mo_combined(const arma::ivec &nocc_frgm, const arma::ivec &
 
 // }
 
-// pair_arma make_indices_from_mask(const arma::umat &mask, int mask_val_for_return)
-// {
-
-//     // blow up to avoid weird casting tricks
-//     if (mask_val_for_return < 0 || mask_val_for_return > 1)
-//         throw 1;
-
-//     std::vector<size_t> vr, vc;
-
-//     for (size_t i = 0; i < mask.n_rows; i++) {
-//         for (size_t j = 0; j < mask.n_cols; j++) {
-//             if (mask(i, j) == mask_val_for_return) {
-//                 vr.push_back(i);
-//                 vc.push_back(j);
-//             }
-//         }
-//     }
-
-//     arma::uvec ar = arma::conv_to<arma::uvec>::from(vr);
-//     arma::uvec ac = arma::conv_to<arma::uvec>::from(vc);
-
-//     return std::make_pair(ar, ac);
-
-// }
-
 pair_arma make_indices_from_mask(const arma::umat &mask, int mask_val_for_return)
 {
 
@@ -201,6 +176,24 @@ pair_arma make_indices_from_mask(const arma::umat &mask, int mask_val_for_return
 
 }
 
+void make_masked_mat(arma::mat &mm, const arma::mat &m, const indices &idxs, double fill_value = 0.0)
+{
+
+    if (idxs.empty())
+        throw 1;
+
+    mm.set_size(arma::size(m));
+    mm.fill(fill_value);
+
+    const size_t nblocks = idxs.size();
+
+    for (size_t i = 0; i < nblocks; i++) {
+        mm.submat(idxs[i], idxs[i]) = m.submat(idxs[i], idxs[i]);
+    }
+
+    return;
+
+}
 
 int main()
 {
@@ -231,27 +224,10 @@ int main()
     indices indices_mo_occ = indices_mo_separate.first;
     indices indices_mo_virt = indices_mo_separate.second;
 
-    C.print("C");
-
-    // C.rows(indices_ao[0]).print("C.rows(indices_ao[0])");
-    // C.rows(indices_ao[1]).print("C.rows(indices_ao[1])");
-
-    // C.submat(indices_ao[0], indices_mo_occ[0]).print("C.submat(indices_ao[0], indices_mo_occ[0])");
-    // C.submat(indices_ao[0], indices_mo_virt[0]).print("C.submat(indices_ao[0], indices_mo_virt[0])");
-
-    arma::umat bC(C.n_rows, C.n_cols, arma::fill::zeros);
-    // for (size_t i = 0; i < nfrgm; i++)
-    //     bC.submat(indices_ao[i], indices_ao[i]).fill(1);
-    bC.submat(indices_ao[1], indices_ao[1]).fill(1);
-    bC.print("bC");
-
-    // integrals.print("integrals");
-    // integrals.print("integrals (AO-masked)");
-
-    pair_arma m0 = make_indices_from_mask(bC, 0);
-    pair_arma m1 = make_indices_from_mask(bC, 1);
-    // C.submat(m0.first, m0.second).print("C.submat(m0.first, m0.second)");
-    C.submat(m1.first, m1.second).print("C.submat(m1.first, m1.second)");
+    integrals.print("integrals");
+    arma::mat integrals_masked;
+    make_masked_mat(integrals_masked, integrals, indices_ao);
+    integrals_masked.print("integrals (AO-masked)");
 
     return 0;
 

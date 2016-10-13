@@ -1,35 +1,82 @@
-#include <cassert>
+#include <algorithm>
 #include <iostream>
+#include <set>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
 #include <armadillo>
 
-typedef std::vector< arma::ivec > indices;
-typedef std::pair<indices, indices> mo_indices;
+typedef std::vector< arma::uvec > indices;
+typedef std::pair< indices, indices > pair_indices;
+// typedef std::pair< std::vector<size_t>, std::vector<size_t> > pair_std;
+typedef std::pair< arma::uvec, arma::uvec > pair_arma;
 
-arma::ivec range(int start, int stop, int step)
+// maybe this should just take size_t to avoid exception handling
+arma::uvec range(int start, int stop, int step)
 {
 
-    return arma::conv_to<arma::ivec>::from(arma::regspace(start, step, stop - 1));
+    if (start < 0 || stop < 0)
+        throw std::invalid_argument("negative numbers meaningless for array indexing");
+    if ((stop - start) < 0)
+        throw std::domain_error("no reverse ranges");
+    if (step < 1)
+        throw std::domain_error("???");
+
+    return arma::conv_to<arma::uvec>::from(arma::regspace(start, step, stop - 1));
 
 }
 
-arma::ivec range(int start, int stop)
+arma::uvec range(int start, int stop)
 {
 
     return range(start, stop, 1);
 
 }
 
-arma::ivec range(int stop)
+arma::uvec range(int stop)
 {
 
     return range(0, stop, 1);
 
 }
 
-indices make_indices_ao(arma::ivec &nbasis_frgm)
+// How to enforce that we expect T to be some kind of Armadillo
+// vector?
+template<typename T>
+T join(const T &a1, const T &a2)
+{
+
+    const size_t l1 = a1.n_elem;
+    const size_t l2 = a2.n_elem;
+    const size_t l3 = l1 + l2;
+
+    T a3(l3);
+
+    a3.subvec(0, l1 - 1) = a1;
+    a3.subvec(l1, l2 - 1) = a2;
+
+    return a3;
+
+}
+
+template arma::uvec join<arma::uvec>(const arma::uvec &a1, const arma::uvec &a2);
+template arma::ivec join<arma::ivec>(const arma::ivec &a1, const arma::ivec &a2);
+
+template <typename T>
+std::vector<T> set_to_ordered_vector(const std::set<T> &s)
+{
+
+    std::vector<T> v(s.begin(), s.end());
+    std::sort(v.begin(), v.end());
+
+    return v;
+
+}
+
+template std::vector<size_t> set_to_ordered_vector(const std::set<size_t> &s);
+
+indices make_indices_ao(const arma::ivec &nbasis_frgm)
 {
 
     const size_t nfrgm = nbasis_frgm.n_elem;
@@ -48,10 +95,11 @@ indices make_indices_ao(arma::ivec &nbasis_frgm)
 
 }
 
-mo_indices make_indices_mo_separate(arma::ivec &nocc_frgm, arma::ivec &nvirt_frgm)
+pair_indices make_indices_mo_separate(const arma::ivec &nocc_frgm, const arma::ivec &nvirt_frgm)
 {
 
-    assert(nocc_frgm.n_elem == nvirt_frgm.n_elem);
+    if (nocc_frgm.n_elem != nvirt_frgm.n_elem)
+        throw 1;
     const size_t nocc = arma::accu(nocc_frgm);
     const size_t nfrgm = nocc_frgm.n_elem;
     indices v_occ, v_virt;
@@ -70,11 +118,89 @@ mo_indices make_indices_mo_separate(arma::ivec &nocc_frgm, arma::ivec &nvirt_frg
         v_virt.push_back(range(start_virt, stop_virt));
     }
 
-    mo_indices p = std::make_pair(v_occ, v_virt);
+    pair_indices p = std::make_pair(v_occ, v_virt);
 
     return p;
 
 }
+
+indices make_indices_mo_combined(const arma::ivec &nocc_frgm, const arma::ivec &nvirt_frgm)
+{
+
+    indices v;
+    const pair_indices p = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
+    const size_t nfrgm = nocc_frgm.n_elem;
+    for (size_t i = 0; i < nfrgm; i++) {
+        v.push_back(join(p.first[i], p.second[i]));
+    }
+
+    return v;
+
+}
+
+// indices make_opposite_indices()
+// {
+
+//     indices v;
+//     return v;
+
+// }
+
+// pair_arma make_indices_from_mask(const arma::umat &mask, int mask_val_for_return)
+// {
+
+//     // blow up to avoid weird casting tricks
+//     if (mask_val_for_return < 0 || mask_val_for_return > 1)
+//         throw 1;
+
+//     std::vector<size_t> vr, vc;
+
+//     for (size_t i = 0; i < mask.n_rows; i++) {
+//         for (size_t j = 0; j < mask.n_cols; j++) {
+//             if (mask(i, j) == mask_val_for_return) {
+//                 vr.push_back(i);
+//                 vc.push_back(j);
+//             }
+//         }
+//     }
+
+//     arma::uvec ar = arma::conv_to<arma::uvec>::from(vr);
+//     arma::uvec ac = arma::conv_to<arma::uvec>::from(vc);
+
+//     return std::make_pair(ar, ac);
+
+// }
+
+pair_arma make_indices_from_mask(const arma::umat &mask, int mask_val_for_return)
+{
+
+    // blow up to avoid weird casting tricks
+    if (mask_val_for_return < 0 || mask_val_for_return > 1)
+        throw 1;
+
+    std::set<size_t> sr, sc;
+
+    for (size_t i = 0; i < mask.n_rows; i++) {
+        for (size_t j = 0; j < mask.n_cols; j++) {
+            if (mask(i, j) == mask_val_for_return) {
+                sr.insert(i);
+                sc.insert(j);
+            }
+        }
+    }
+
+    // transfer the set contents to vectors, which are then sorted in
+    // place
+    std::vector<size_t> vr = set_to_ordered_vector(sr);
+    std::vector<size_t> vc = set_to_ordered_vector(sc);
+
+    arma::uvec ar = arma::conv_to<arma::uvec>::from(vr);
+    arma::uvec ac = arma::conv_to<arma::uvec>::from(vc);
+
+    return std::make_pair(ar, ac);
+
+}
+
 
 int main()
 {
@@ -98,12 +224,34 @@ int main()
     nocc_frgm.print("nocc_frgm");
     nvirt_frgm.print("nvirt_frgm");
 
+    const size_t nfrgm = nbasis_frgm.n_elem;
+
     indices indices_ao = make_indices_ao(nbasis_frgm);
-    mo_indices indices_mo_separate = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
+    pair_indices indices_mo_separate = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
     indices indices_mo_occ = indices_mo_separate.first;
     indices indices_mo_virt = indices_mo_separate.second;
 
     C.print("C");
+
+    // C.rows(indices_ao[0]).print("C.rows(indices_ao[0])");
+    // C.rows(indices_ao[1]).print("C.rows(indices_ao[1])");
+
+    // C.submat(indices_ao[0], indices_mo_occ[0]).print("C.submat(indices_ao[0], indices_mo_occ[0])");
+    // C.submat(indices_ao[0], indices_mo_virt[0]).print("C.submat(indices_ao[0], indices_mo_virt[0])");
+
+    arma::umat bC(C.n_rows, C.n_cols, arma::fill::zeros);
+    // for (size_t i = 0; i < nfrgm; i++)
+    //     bC.submat(indices_ao[i], indices_ao[i]).fill(1);
+    bC.submat(indices_ao[1], indices_ao[1]).fill(1);
+    bC.print("bC");
+
+    // integrals.print("integrals");
+    // integrals.print("integrals (AO-masked)");
+
+    pair_arma m0 = make_indices_from_mask(bC, 0);
+    pair_arma m1 = make_indices_from_mask(bC, 1);
+    // C.submat(m0.first, m0.second).print("C.submat(m0.first, m0.second)");
+    C.submat(m1.first, m1.second).print("C.submat(m1.first, m1.second)");
 
     return 0;
 

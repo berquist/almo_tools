@@ -1,16 +1,12 @@
 from __future__ import print_function
 
 import numpy as np
-formatter = {
-    'float_kind': lambda x: '{:14.8f}'.format(x)
-}
-np.set_printoptions(linewidth=200, formatter=formatter)
 
 from functools import reduce
 
 from scripts.read_arma_mat import read_arma_mat_ascii
 
-from fragment_ia_ranges import repack_matrix_to_vector
+from almo_tools.fragment_ia_ranges import repack_matrix_to_vector
 
 
 def product(l):
@@ -29,7 +25,7 @@ def make_indices_ao(nbasis_frgm):
     l = []
     nfrgm = len(nbasis_frgm)
     for i in range(nfrgm):
-        print(sum(nbasis_frgm[:i]), sum(nbasis_frgm[:i]) + nbasis_frgm[i])
+        # print(sum(nbasis_frgm[:i]), sum(nbasis_frgm[:i]) + nbasis_frgm[i])
         indices = list(range(sum(nbasis_frgm[:i]),
                              sum(nbasis_frgm[:i]) + nbasis_frgm[i]))
         l.append(np.array(indices))
@@ -159,6 +155,11 @@ def form_superoverlap(S, nocc, nvirt):
 
 
 if __name__ == '__main__':
+
+    formatter = {
+        'float_kind': lambda x: '{:14.8f}'.format(x)
+    }
+    np.set_printoptions(linewidth=200, formatter=formatter)
 
     # Read in all the test vectors/matrices from disk.
 
@@ -290,6 +291,16 @@ if __name__ == '__main__':
         repack_matrix_to_vector(rhs6_v, rhs6_m)
         print(rhs6_m)
         # print(rhs6_v)
+
+    print(r"6a. run over all {\mu\nu}, run over fragment {i} and all {a}, take all {ia}")
+    # This is the same as 5, but separated into one fragment at a
+    # time.
+    for idx in ifrgm:
+        rhs6a_m = np.dot(C[:, indices_mo_occ[idx]].T, np.dot(integrals, C[:, nocc:]))
+        rhs6a_v = np.empty(shape=product(rhs6a_m.shape))
+        repack_matrix_to_vector(rhs6a_v, rhs6a_m)
+        print(rhs6a_m)
+        # print(rhs6a_v)
 
     print(r"7. run over fragment {\mu\nu}, run over all {ia}, take all {ia}")
     # this currently doesn't recombine the {ia} like it should

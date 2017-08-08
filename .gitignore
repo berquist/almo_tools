@@ -1,3 +1,7 @@
+# Doxygen
+html/
+latex/
+
 # Python
 __pycache__/
 *.py[co]

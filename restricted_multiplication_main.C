@@ -2,6 +2,8 @@
 #include "indices.h"
 #include "printing.h"
 
+using namespace libresponse;
+
 int main()
 {
 
@@ -43,11 +45,11 @@ int main()
 
     const size_t nfrgm = nbasis_frgm.n_elem;
 
-    const indices indices_ao = make_indices_ao(nbasis_frgm);
-    const pair_indices indices_mo_separate = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
-    const indices indices_mo_combined = make_indices_mo_combined(nocc_frgm, nvirt_frgm);
-    const indices indices_mo_occ = indices_mo_separate.first;
-    const indices indices_mo_virt = indices_mo_separate.second;
+    const type::indices indices_ao = make_indices_ao(nbasis_frgm);
+    const type::pair_indices indices_mo_separate = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
+    const type::indices indices_mo_combined = make_indices_mo_combined(nocc_frgm, nvirt_frgm);
+    const type::indices indices_mo_occ = indices_mo_separate.first;
+    const type::indices indices_mo_virt = indices_mo_separate.second;
 
     std::cout << dashes << std::endl;
     std::cout << "indices_ao" << std::endl;
@@ -70,7 +72,7 @@ int main()
 
     const arma::uvec indices_mo_restricted = make_indices_mo_restricted(nocc_frgm, nvirt_frgm);
 
-    const indices indices_mo_restricted_local_occ_all_virt = \
+    const type::indices indices_mo_restricted_local_occ_all_virt =      \
         make_indices_mo_restricted_local_occ_all_virt(nocc_frgm, nvirt_frgm);
 
     std::cout << "indices_mo_restricted" << std::endl;

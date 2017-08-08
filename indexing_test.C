@@ -2,6 +2,8 @@
 #include "indices.h"
 #include "printing.h"
 
+using namespace libresponse;
+
 int main()
 {
 
@@ -33,9 +35,9 @@ int main()
 
     // size consistency checks
     if (nbasis_frgm_.n_elem != norb_frgm_.n_elem)
-        throw 1;
+        throw std::runtime_error("nbasis_frgm_.n_elem != norb_frgm_.n_elem");
     if (nocc_frgm_.n_elem != norb_frgm_.n_elem)
-        throw 1;
+        throw std::runtime_error("nocc_frgm_.n_elem != norb_frgm_.n_elem");
 
     const arma::uvec nbasis_frgm = arma::conv_to<arma::uvec>::from(nbasis_frgm_);
     const arma::uvec norb_frgm = arma::conv_to<arma::uvec>::from(norb_frgm_);
@@ -46,17 +48,17 @@ int main()
     const size_t nvirt_tot = arma::accu(nvirt_frgm);
     const size_t norb_tot = arma::accu(norb_frgm);
     if ((nocc_tot + nvirt_tot) != norb_tot)
-        throw 1;
+        throw std::runtime_error("(nocc_tot + nvirt_tot) != norb_tot");
 
     const size_t nfrgm = nbasis_frgm.n_elem;
 
-    const indices indices_ao = make_indices_ao(nbasis_frgm);
-    const pair_indices indices_mo_separate = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
-    const indices indices_mo_combined = make_indices_mo_combined(nocc_frgm, nvirt_frgm);
-    const indices indices_mo_occ = indices_mo_separate.first;
-    const indices indices_mo_virt = indices_mo_separate.second;
+    const type::indices indices_ao = make_indices_ao(nbasis_frgm);
+    const type::pair_indices indices_mo_separate = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
+    const type::indices indices_mo_combined = make_indices_mo_combined(nocc_frgm, nvirt_frgm);
+    const type::indices indices_mo_occ = indices_mo_separate.first;
+    const type::indices indices_mo_virt = indices_mo_separate.second;
     const arma::uvec indices_mo_restricted = make_indices_mo_restricted(nocc_frgm, nvirt_frgm);
-    const indices indices_mo_restricted_local_occ_all_virt = \
+    const type::indices indices_mo_restricted_local_occ_all_virt =      \
         make_indices_mo_restricted_local_occ_all_virt(nocc_frgm, nvirt_frgm);
 
     for (size_t i = 0; i < nfrgm; i++) {

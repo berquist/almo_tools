@@ -1,6 +1,7 @@
 #include "printing.h"
 
-std::ostream& operator<<(std::ostream& os, const indices& i)
+
+std::ostream& operator<<(std::ostream& os, const libresponse::type::indices& i)
 {
 
     const size_t size = i.size();
@@ -16,7 +17,7 @@ std::ostream& operator<<(std::ostream& os, const indices& i)
 
 }
 
-std::ostream& operator<<(std::ostream& os, const pair_indices& pi)
+std::ostream& operator<<(std::ostream& os, const libresponse::type::pair_indices& pi)
 {
 
     os << " pair (first)" << std::endl;
@@ -28,7 +29,7 @@ std::ostream& operator<<(std::ostream& os, const pair_indices& pi)
 
 }
 
-std::ostream& operator<<(std::ostream& os, const pair_arma& pa)
+std::ostream& operator<<(std::ostream& os, const libresponse::type::pair_arma& pa)
 {
 
     os << " pair (first)" << std::endl;
@@ -40,7 +41,7 @@ std::ostream& operator<<(std::ostream& os, const pair_arma& pa)
 
 }
 
-std::ostream& operator<<(std::ostream& os, const pair& p)
+std::ostream& operator<<(std::ostream& os, const libresponse::type::pair& p)
 {
 
     os << " (" << p.first << ", " << p.second << ")";
@@ -49,10 +50,10 @@ std::ostream& operator<<(std::ostream& os, const pair& p)
 
 }
 
-std::ostream& operator<<(std::ostream& os, const pairs& ps)
+std::ostream& operator<<(std::ostream& os, const libresponse::type::pairs& ps)
 {
 
-    pairs_iterator it;
+    libresponse::type::pairs_iterator it;
 
     for (it = ps.begin(); it != ps.end(); ++it) {
         os << *it << std::endl;

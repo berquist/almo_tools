@@ -1,5 +1,5 @@
-#ifndef PRINTING_H_
-#define PRINTING_H_
+#ifndef LIBRESPONSE_INDEX_PRINTING_H_
+#define LIBRESPONSE_INDEX_PRINTING_H_
 
 /*!
  * @brief Enable printing to streams for all typedefs.
@@ -9,11 +9,11 @@
 
 #include "typedefs.h"
 
-std::ostream& operator<<(std::ostream& os, const indices& i);
-std::ostream& operator<<(std::ostream& os, const pair_indices& pi);
-std::ostream& operator<<(std::ostream& os, const pair_arma& pa);
-std::ostream& operator<<(std::ostream& os, const pair& p);
-std::ostream& operator<<(std::ostream& os, const pairs& ps);
+std::ostream& operator<<(std::ostream& os, const libresponse::type::indices& i);
+std::ostream& operator<<(std::ostream& os, const libresponse::type::pair_indices& pi);
+std::ostream& operator<<(std::ostream& os, const libresponse::type::pair_arma& pa);
+std::ostream& operator<<(std::ostream& os, const libresponse::type::pair& p);
+std::ostream& operator<<(std::ostream& os, const libresponse::type::pairs& ps);
 // template <typename T>
 // std::ostream& operator<<(std::ostream& os, const std::vector<T>& v);
 template <typename T>
@@ -34,4 +34,4 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
 
 };
 
-#endif // PRINTING_H_
+#endif // LIBRESPONSE_INDEX_PRINTING_H_

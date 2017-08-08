@@ -4,11 +4,13 @@
 #include "printing.h"
 #include "utils.h"
 
-indices make_indices_ao(const arma::uvec &nbasis_frgm)
+namespace libresponse {
+
+type::indices make_indices_ao(const arma::uvec &nbasis_frgm)
 {
 
     const size_t nfrgm = nbasis_frgm.n_elem;
-    indices v;
+    type::indices v;
     size_t start, stop;
     for (size_t i = 0; i < nfrgm; i++) {
         if (i == 0)
@@ -23,14 +25,14 @@ indices make_indices_ao(const arma::uvec &nbasis_frgm)
 
 }
 
-pair_indices make_indices_mo_separate(const arma::uvec &nocc_frgm, const arma::uvec &nvirt_frgm)
+type::pair_indices make_indices_mo_separate(const arma::uvec &nocc_frgm, const arma::uvec &nvirt_frgm)
 {
 
     if (nocc_frgm.n_elem != nvirt_frgm.n_elem)
-        throw 1;
+        throw std::runtime_error("nocc_frgm.n_elem != nvirt_frgm.n_elem");
     const size_t nocc = arma::accu(nocc_frgm);
     const size_t nfrgm = nocc_frgm.n_elem;
-    indices v_occ, v_virt;
+    type::indices v_occ, v_virt;
     size_t start_occ, stop_occ, start_virt, stop_virt;
     for (size_t i = 0; i < nfrgm; i++) {
         if (i == 0) {
@@ -46,17 +48,17 @@ pair_indices make_indices_mo_separate(const arma::uvec &nocc_frgm, const arma::u
         v_virt.push_back(range(start_virt, stop_virt));
     }
 
-    pair_indices p = std::make_pair(v_occ, v_virt);
+    type::pair_indices p = std::make_pair(v_occ, v_virt);
 
     return p;
 
 }
 
-indices make_indices_mo_combined(const arma::uvec &nocc_frgm, const arma::uvec &nvirt_frgm)
+type::indices make_indices_mo_combined(const arma::uvec &nocc_frgm, const arma::uvec &nvirt_frgm)
 {
 
-    indices v;
-    const pair_indices p = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
+    type::indices v;
+    const type::pair_indices p = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
     const size_t nfrgm = nocc_frgm.n_elem;
     for (size_t i = 0; i < nfrgm; i++) {
         v.push_back(join(p.first[i], p.second[i]));
@@ -74,8 +76,8 @@ arma::uvec make_indices_mo_restricted(const arma::uvec &nocc_frgm, const arma::u
     const size_t norb_tot = nocc_tot + nvirt_tot;
     const size_t nfrgm = nocc_frgm.n_elem;
 
-    const pair_indices p = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
-    pairs pairs_all, pairs_good, pairs_bad;
+    const type::pair_indices p = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
+    type::pairs pairs_all, pairs_good, pairs_bad;
 
     // Collect all possible occ-virt excitation pairs within each
     // fragment.
@@ -102,7 +104,7 @@ arma::uvec make_indices_mo_restricted(const arma::uvec &nocc_frgm, const arma::u
     // ones that are not members of the restricted set are added to
     // the disallowed set.
 
-    pairs_iterator it_all;
+    type::pairs_iterator it_all;
 
     for (it_all = pairs_all.begin(); it_all != pairs_all.end(); ++it_all) {
         if (pairs_good.count(*it_all) == 0)
@@ -140,20 +142,20 @@ arma::uvec make_indices_mo_restricted(const arma::uvec &nocc_frgm, const arma::u
     return arma::conv_to<arma::uvec>::from(v_good);
 }
 
-indices make_indices_mo_restricted_local_occ_all_virt(const arma::uvec &nocc_frgm, const arma::uvec &nvirt_frgm)
+type::indices make_indices_mo_restricted_local_occ_all_virt(const arma::uvec &nocc_frgm, const arma::uvec &nvirt_frgm)
 {
     const size_t nocc_tot = arma::accu(nocc_frgm);
     const size_t nvirt_tot = arma::accu(nvirt_frgm);
     const size_t norb_tot = nocc_tot + nvirt_tot;
     const size_t nfrgm = nocc_frgm.n_elem;
 
-    const pair_indices p = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
+    const type::pair_indices p = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
 
     // For each fragment, collect pairs corresonding to its occupied
     // indices to all virtual indices (spanning all fragments).
-    std::vector<pairs> pairs_per_frgm;
+    std::vector<type::pairs> pairs_per_frgm;
     for (size_t f = 0; f < nfrgm; f++) {
-        pairs pairs_frgm;
+        type::pairs pairs_frgm;
         for (size_t i = 0; i < p.first[f].n_elem; i++) {
             for (size_t a = nocc_tot; a < norb_tot; a++) {
                 pairs_frgm.insert(std::make_pair(p.first[f](i), a));
@@ -164,7 +166,7 @@ indices make_indices_mo_restricted_local_occ_all_virt(const arma::uvec &nocc_frg
 
     // Collect all possible occ-virt excitation pairs for the
     // supersystem.
-    pairs pairs_all;
+    type::pairs pairs_all;
     for (size_t i = 0; i < nocc_tot; i++) {
         for (size_t a = nocc_tot; a < norb_tot; a++) {
             pairs_all.insert(std::make_pair(i, a));
@@ -172,10 +174,10 @@ indices make_indices_mo_restricted_local_occ_all_virt(const arma::uvec &nocc_frg
     }
 
     // Convert the allowed pairs per fragment into compound indices.
-    indices v_all;
-    pairs_iterator it_all;
+    type::indices v_all;
+    type::pairs_iterator it_all;
     for (size_t f = 0; f < nfrgm; f++) {
-        const pairs pairs_frgm = pairs_per_frgm.at(f);
+        const type::pairs pairs_frgm = pairs_per_frgm.at(f);
         std::vector<size_t> v_frgm;
         size_t i = 0;
         for (it_all = pairs_all.begin(); it_all != pairs_all.end(); ++it_all) {
@@ -192,11 +194,11 @@ indices make_indices_mo_restricted_local_occ_all_virt(const arma::uvec &nocc_frg
 }
 
 // fill then copy, rather than copy then fill
-void make_masked_mat(arma::mat &mm, const arma::mat &m, const indices &idxs, double fill_value)
+void make_masked_mat(arma::mat &mm, const arma::mat &m, const type::indices &idxs, double fill_value)
 {
 
     if (idxs.empty())
-        throw 1;
+        throw std::runtime_error("idxs.empty()");
 
     mm.set_size(m.n_rows, m.n_cols);
     mm.fill(fill_value);
@@ -213,7 +215,7 @@ void make_masked_mat(arma::mat &mm, const arma::mat &m, const indices &idxs, dou
 
 }
 
-void make_masked_mat(arma::cube &mc, const arma::cube &c, const indices &idxs, double fill_value)
+void make_masked_mat(arma::cube &mc, const arma::cube &c, const type::indices &idxs, double fill_value)
 {
 
     mc.set_size(c.n_rows, c.n_cols, c.n_slices);
@@ -226,11 +228,11 @@ void make_masked_mat(arma::cube &mc, const arma::cube &c, const indices &idxs, d
 
 }
 
-void make_masked_mat(arma::mat &mm, const arma::mat &m, const indices &idxs_rows, const indices &idxs_cols, double fill_value)
+void make_masked_mat(arma::mat &mm, const arma::mat &m, const type::indices &idxs_rows, const type::indices &idxs_cols, double fill_value)
 {
 
     if (idxs_rows.empty() || idxs_cols.empty())
-        throw 1;
+        throw std::runtime_error("idxs_rows.empty() || idxs_cols.empty()");
 
     mm.set_size(m.n_rows, m.n_cols);
     mm.fill(fill_value);
@@ -238,7 +240,7 @@ void make_masked_mat(arma::mat &mm, const arma::mat &m, const indices &idxs_rows
     // this is an artificial constraint, there's probably a better way
     // of doing this
     if (idxs_rows.size() != idxs_cols.size())
-        throw 1;
+        throw std::runtime_error("idxs_rows.size() != idxs_cols.size()");
 
     const size_t nblocks = idxs_rows.size();
 
@@ -252,7 +254,7 @@ void make_masked_mat(arma::mat &mm, const arma::mat &m, const indices &idxs_rows
 
 }
 
-void make_masked_mat(arma::cube &mc, const arma::cube &c, const indices &idxs_rows, const indices &idxs_cols, double fill_value)
+void make_masked_mat(arma::cube &mc, const arma::cube &c, const type::indices &idxs_rows, const type::indices &idxs_cols, double fill_value)
 {
 
     mc.set_size(c.n_rows, c.n_cols, c.n_slices);
@@ -278,12 +280,12 @@ std::vector<T> set_to_ordered_vector(const std::set<T> &s)
 
 template std::vector<size_t> set_to_ordered_vector(const std::set<size_t> &s);
 
-pair_arma make_indices_from_mask(const arma::umat &mask, int mask_val_for_return)
+type::pair_arma make_indices_from_mask(const arma::umat &mask, int mask_val_for_return)
 {
 
     // blow up to avoid weird casting tricks
     if (mask_val_for_return < 0 || mask_val_for_return > 1)
-        throw 1;
+        throw std::runtime_error("mask_val_for_return < 0 || mask_val_for_return > 1");
 
     std::set<size_t> sr, sc;
 
@@ -307,3 +309,5 @@ pair_arma make_indices_from_mask(const arma::umat &mask, int mask_val_for_return
     return std::make_pair(ar, ac);
 
 }
+
+} // namespace libresponse

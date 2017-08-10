@@ -103,10 +103,13 @@ def make_indices_mo_restricted(nocc_frgm, nvirt_frgm):
     # indices_mo_ov_unrestricted = np.asarray(range(nov_unrestricted))
     pairs_good = []
     for ifrg in range(nfrgm):
-        pairs_good.extend([(i, a) for i in indices_mo_occ[ifrg] for a in indices_mo_virt[ifrg]])
+        pairs_good.extend([(i, a)
+                           for i in indices_mo_occ[ifrg]
+                           for a in indices_mo_virt[ifrg]])
     # print('pairs_good')
     # print(pairs_good)
-    indices_good = [(pair[0]*nvirt_sum + pair[1] - nocc_sum) for pair in pairs_good]
+    indices_good = [(pair[0]*nvirt_sum + pair[1] - nocc_sum)
+                    for pair in pairs_good]
     # print('indices_good')
     # print(indices_good)
     # Now form the opposite (disallowed) pairs as the difference

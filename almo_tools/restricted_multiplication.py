@@ -154,6 +154,92 @@ def form_superoverlap(S, nocc, nvirt):
     return superoverlap
 
 
+def restricted_multiplication(C):
+    # Options:
+    # 1. run over all {\mu\nu}, run over all {ia}, take fragment {ia}
+    # 2. run over all {\mu\nu}, run over fragment {ia}, take fragment {ia}
+    # 3. run over fragment {\mu\nu}, run over all {ia}, take fragment {ia}
+    # 4. run over fragment {\mu\nu}, run over fragment {ia}, take fragment {ia}
+    # 5. run over all {\mu\nu}, run over all {ia}, take all {ia}
+    # 6. run over all {\mu\nu}, run over fragment {ia}, take all {ia}
+    # 7. run over fragment {\mu\nu}, run over all {ia}, take all {ia}
+    # 8. run over fragment {\mu\nu}, run over fragment {ia}, take all {ia}
+
+    print(r"1. run over all {\mu\nu}, run over all {ia}, take fragment {ia}")
+    print(r"2. run over all {\mu\nu}, run over fragment {ia}, take fragment {ia}")
+    print(r"3. run over fragment {\mu\nu}, run over all {ia}, take fragment {ia}")
+    print(r"4. run over fragment {\mu\nu}, run over fragment {ia}, take fragment {ia}")
+
+    print(r"5. run over all {\mu\nu}, run over all {ia}, take all {ia}")
+    rhs5_m = np.dot(C[:, :nocc].T, np.dot(integrals, C[:, nocc:]))
+    rhs5_v = np.empty(shape=product(rhs5_m.shape))
+    repack_matrix_to_vector(rhs5_v, rhs5_m)
+    # print(rhs5_m)
+    print(rhs5_v)
+
+    print(r"6. run over all {\mu\nu}, run over fragment {ia}, take all {ia}")
+    # this currently doesn't recombine the {ia} like it should
+    for idx in ifrgm:
+        rhs6_m = np.dot(C[:, indices_mo_occ[idx]].T, np.dot(integrals, C[:, indices_mo_virt[idx]]))
+        rhs6_v = np.empty(shape=product(rhs6_m.shape))
+        repack_matrix_to_vector(rhs6_v, rhs6_m)
+        # print(rhs6_m)
+        print(rhs6_v)
+
+    print(r"7. run over fragment {\mu\nu}, run over all {ia}, take all {ia}")
+    # this currently doesn't recombine the {ia} like it should
+    for idx in ifrgm:
+        integrals_frgm = extract_block_from_matrix(integrals, indices_ao[idx], indices_ao[idx])
+        rhs7_m = np.dot(C[indices_ao[idx], :nocc].T, np.dot(integrals_frgm, C[indices_ao[idx], nocc:]))
+        rhs7_v = np.empty(shape=product(rhs7_m.shape))
+        repack_matrix_to_vector(rhs7_v, rhs7_m)
+        # print(rhs7_m)
+        print(rhs7_v)
+
+    print(r"7a. zero non-fragment {\mu\nu}, run over all {ia}, take all {ia}")
+    # Do everything at once.
+    ## Calculate all the AO index blocks, then zero the opposite indices.
+    integrals_frgm = np.zeros_like(integrals)
+    blocks = []
+    # Form fragment index blocks.
+    for fragment_indices_ao in indices_ao:
+        block_fragment_indices_ao = make_index_arrays_into_block(fragment_indices_ao, fragment_indices_ao)
+        blocks.append(block_fragment_indices_ao)
+    # Combine the blocks.
+    blocks_combined = []
+    for idx in ifrgm:
+        b = []
+        for block in blocks:
+            b.append(block[idx])
+        b = np.hstack(b)
+        blocks_combined.append(b)
+    blocks_combined = tuple(blocks_combined)
+    # "Mask" the integrals, which here does a copy.
+    integrals_frgm[blocks_combined] = integrals[blocks_combined]
+    # print(integrals)
+    # print(integrals_frgm)
+    rhs7a_m = np.dot(C[:, :nocc].T, np.dot(integrals_frgm, C[:, nocc:]))
+    rhs7a_v = np.empty(shape=product(rhs7a_m.shape))
+    repack_matrix_to_vector(rhs7a_v, rhs7a_m)
+    print(rhs7a_m)
+    # print(rhs7a_v)
+
+    print(r"8. run over fragment {\mu\nu}, run over fragment {ia}, take all {ia}")
+    # this currently doesn't recombine the {ia} like it should
+    for idx in ifrgm:
+        integrals_frgm = extract_block_from_matrix(integrals, indices_ao[idx], indices_ao[idx])
+        # extract the block of fragment AOs, all MOs -> fragment MOs
+        # selected in multiplication call
+        C_frgm_AO = extract_block_from_matrix(C, indices_ao[idx], np.arange(C.shape[1]))
+        rhs8_m = np.dot(C_frgm_AO[:, indices_mo_occ[idx]].T, np.dot(integrals_frgm, C_frgm_AO[:, indices_mo_virt[idx]]))
+        rhs8_v = np.empty(shape=product(rhs8_m.shape))
+        repack_matrix_to_vector(rhs8_v, rhs8_m)
+        print(rhs8_m)
+        # print(rhs8_v)
+
+    return None
+
+
 if __name__ == '__main__':
 
     formatter = {
@@ -353,3 +439,9 @@ if __name__ == '__main__':
         print(rhs8_m)
         # print(rhs8_v)
 
+    # eq35 = '=' * 35
+
+    # print(eq35 + ' unprojected ' + eq35)
+    # restricted_multiplication(C)
+    # print(eq35 + ' projected ' + eq35)
+    # restricted_multiplication(C_projected)

@@ -3,15 +3,23 @@ project(almo_tools CXX)
 
 find_package(Armadillo REQUIRED)
 
+# /usr/include/python3.6m/Python.h on Arch Linux
+find_package(PythonLibs REQUIRED)
+include_directories(${PYTHON_INCLUDE_DIRS})
+
 set(SRC
     indices.C
     printing.C
+    pybind.C
     utils.C
     )
 # restricted_multiplication_main.C
 
 add_library(almo_tools SHARED ${SRC})
-target_link_libraries(almo_tools ${ARMADILLO_LIBRARIES})
+target_link_libraries(almo_tools
+    ${ARMADILLO_LIBRARIES}
+    ${PYTHON_LIBRARIES}
+    )
 
 set(EXECUTABLES
     restricted_multiplication_main

@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import os.path
+
 import numpy as np
 
 from functools import reduce
@@ -242,6 +244,8 @@ def restricted_multiplication(C):
 
 if __name__ == '__main__':
 
+    datadir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+
     formatter = {
         'float_kind': lambda x: '{:14.8f}'.format(x)
     }
@@ -249,30 +253,30 @@ if __name__ == '__main__':
 
     # Read in all the test vectors/matrices from disk.
 
-    E = read_arma_mat_ascii('E.dat')[:, 0]
+    E = read_arma_mat_ascii(os.path.join(datadir, 'E.dat'))[:, 0]
     print('E', E.shape)
-    C = read_arma_mat_ascii('C.dat')
+    C = read_arma_mat_ascii(os.path.join(datadir, 'C.dat'))
     print('C', C.shape)
-    integrals = read_arma_mat_ascii('integrals.dat')
+    integrals = read_arma_mat_ascii(os.path.join(datadir, 'integrals.dat'))
     print('integrals', integrals.shape)
     # rhsvec = read_arma_mat_ascii('rhsvecs_0_alph.dat')[:, 0]
-    rhsvec = read_arma_mat_ascii('rhsvec.dat')[:, 0]
+    rhsvec = read_arma_mat_ascii(os.path.join(datadir, 'rhsvec.dat'))[:, 0]
     print('rhsvec', rhsvec.shape)
     # rspvec_guess = read_arma_mat_ascii('rspvecs_guess_0_alph.dat')[:, 0]
-    rspvec_guess = read_arma_mat_ascii('rspvec.dat')[:, 0]
+    rspvec_guess = read_arma_mat_ascii(os.path.join(datadir, 'rspvec.dat'))[:, 0]
     print('rspvec_guess', rspvec_guess.shape)
-    ediff = read_arma_mat_ascii('ediff.dat')[:, 0]
+    ediff = read_arma_mat_ascii(os.path.join(datadir, 'ediff.dat'))[:, 0]
     print('ediff', ediff.shape)
 
-    nbasis_frgm = read_arma_mat_ascii('nbasis_frgm.dat')
+    nbasis_frgm = read_arma_mat_ascii(os.path.join(datadir, 'nbasis_frgm.dat'))
     print('nbasis_frgm', nbasis_frgm.shape, len(nbasis_frgm))
     print(nbasis_frgm.reshape(len(nbasis_frgm)))
     nbasis_frgm = nbasis_frgm.reshape(len(nbasis_frgm))
-    norb_frgm = read_arma_mat_ascii('norb_frgm.dat')
+    norb_frgm = read_arma_mat_ascii(os.path.join(datadir, 'norb_frgm.dat'))
     norb_frgm = norb_frgm.reshape(len(norb_frgm))
     print('norb_frgm', norb_frgm.shape)
     print(norb_frgm)
-    nocc_frgm = read_arma_mat_ascii('nocc_frgm.dat')
+    nocc_frgm = read_arma_mat_ascii(os.path.join(datadir, 'nocc_frgm.dat'))
     nocc_frgm = nocc_frgm.reshape(len(nocc_frgm))
     print('nocc_frgm', nocc_frgm.shape)
     print(nocc_frgm)
@@ -280,7 +284,7 @@ if __name__ == '__main__':
     assert len(nbasis_frgm) == len(norb_frgm) == len(nocc_frgm)
 
     nvirt_frgm = norb_frgm - nocc_frgm
-    print('nvirt-frgm')
+    print('nvirt_frgm')
     print(nvirt_frgm)
 
     ifrgm = list(range(len(nbasis_frgm)))

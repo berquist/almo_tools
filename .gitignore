@@ -1,3 +1,6 @@
+r*.dat
+indices*.dat
+
 # Doxygen
 html/
 latex/
@@ -5,6 +8,8 @@ latex/
 # Python
 __pycache__/
 *.py[co]
+.cache/
+.coverage
 
 # C++
 *.x

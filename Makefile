@@ -8,3 +8,6 @@ all:
 
 clean:
 	rm -f *.x
+
+pytest:
+	pytest -v --doctest-modules --cov=almo_tools tests

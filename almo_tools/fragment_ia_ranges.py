@@ -3,7 +3,7 @@ from __future__ import print_function
 import numpy as np
 
 
-def repack_matrix_to_vector(v, m):
+def repack_matrix_to_vector_slow(v, m):
     """Columns of the matrix are the fast index."""
 
     assert len(m.shape) == 2
@@ -22,7 +22,11 @@ def repack_matrix_to_vector(v, m):
     return
 
 
-def repack_vector_to_matrix(v, m):
+def repack_matrix_to_vector(mat):
+    return np.reshape(mat, -1)
+
+
+def repack_vector_to_matrix_slow(v, m):
     """Columns of the matrix are the fast index."""
 
     assert len(m.shape) == 2
@@ -39,6 +43,12 @@ def repack_vector_to_matrix(v, m):
             m[i, a] = v[ia]
 
     return
+
+
+def repack_vector_to_matrix(vec, shape):
+    """Columns of the matrix are the fast index."""
+    assert len(shape) == 2
+    return vec.reshape(shape)
 
 
 def form_indices_zero(nocc, nvirt):
@@ -88,8 +98,8 @@ if __name__ == '__main__':
     # Assume no linear dependencies.
     # nbasis_frg = np.array([3, 5, 12])
     # nocc_frg = np.array([1, 2, 3])
-    nbasis_frg = np.array([2, 6])
-    nocc_frg = np.array([1, 2])
+    nbasis_frg = np.array([6, 2])
+    nocc_frg = np.array([2, 1])
 
     nvirt_frg = nbasis_frg - nocc_frg
     # TODO crash for negative number of virtuals at any position
@@ -115,7 +125,7 @@ if __name__ == '__main__':
 
     # In the ALMO code, the ordering of fragment indices is
     # [o1, o2, ..., on, v1, v2, ..., vn].
-    ordering = np.hstack((nocc_frg, nvirt_frg))
+    ordering = np.concatenate((nocc_frg, nvirt_frg))
     print('ALMO ordering (ooo...vvv...)')
     print(ordering)
 
@@ -126,11 +136,13 @@ if __name__ == '__main__':
     indices_unrestricted_zero = form_indices_zero(nocc_tot, nvirt_tot)
     assert len(indices_unrestricted_zero) == (nocc_tot * nvirt_tot)
     print('full: loop using preconstructed pairs starting at 0')
+    print(indices_unrestricted_zero)
     loop_rhf_pairs_start_at_zero(indices_unrestricted_zero, nvirt_tot)
 
     indices_unrestricted_orbwin = form_indices_orbwin(nocc_tot, nvirt_tot)
     assert len(indices_unrestricted_orbwin) == (nocc_tot * nvirt_tot)
     print('full: loop using preconstructed pairs starting at correct orbital window')
+    print(indices_unrestricted_orbwin)
     loop_rhf_pairs_start_at_orbwin(indices_unrestricted_orbwin, nocc_tot, nvirt_tot)
 
     # Form index-restricted excitations, that is, allow only

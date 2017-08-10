@@ -8,7 +8,8 @@ from functools import reduce
 
 from scripts.read_arma_mat import read_arma_mat_ascii
 
-from almo_tools.fragment_ia_ranges import repack_matrix_to_vector
+from almo_tools.fragment_ia_ranges import form_indices_orbwin
+from almo_tools.fragment_ia_ranges import repack_matrix_to_vector_slow as repack_matrix_to_vector
 
 
 def product(l):
@@ -40,10 +41,15 @@ def make_indices_mo_separate(nocc_frgm, nvirt_frgm):
     into a supermatrix for that fragment based upon the ordering of
     molecular orbitals (MOs).
 
-    One list is for the occupied MOs and the other is for unoccupied/virtual MOs.
+    One list is for the occupied MOs and the other is for
+    unoccupied/virtual MOs.
 
-    The order of ALMOs is [o1, o2, ..., on, v1, v2, ..., vn]; all the
-    occupieds come before all the virtuals.
+    The order of ALMO coefficients is [o1, o2, ..., on, v1, v2, ...,
+    vn]; all the occupieds come before all the virtuals.
+
+    Returns indices like [o1, o2, ...] and [v1, v2, ...], where each
+    list element is an array.
+
     """
     assert nocc_frgm.shape == nvirt_frgm.shape
     nocc = sum(nocc_frgm)
@@ -61,15 +67,80 @@ def make_indices_mo_separate(nocc_frgm, nvirt_frgm):
 
 
 def make_indices_mo_combined(nocc_frgm, nvirt_frgm):
-    """...
+    """From the number of occupied and virtual orbitals present on each
+    fragment, create one list of arrays ...
+
+    The order of ALMO coefficients is [o1, o2, ..., on, v1, v2, ...,
+    vn]; all the occupieds come before all the virtuals.
+
+    Returns indices like [o1 + v1, o2 + v2, ...], where each list
+    element is an array.
+
     """
     indices_mo_occ, indices_mo_virt = make_indices_mo_separate(nocc_frgm, nvirt_frgm)
     l = []
     nfrgm = len(nocc_frgm)
     for i in range(nfrgm):
-        indices_combined = np.hstack((indices_mo_occ[i], indices_mo_virt[i]))
+        indices_combined = np.concatenate((indices_mo_occ[i], indices_mo_virt[i]))
         l.append(indices_combined)
     return l
+
+
+def make_indices_mo_restricted(nocc_frgm, nvirt_frgm):
+    """Form index-restricted excitations, that is, allow only
+    occupied-virtual excitations within individual fragments.
+
+    """
+    assert nocc_frgm.shape == nvirt_frgm.shape
+    assert len(nocc_frgm.shape) == 1
+    nfrgm = nocc_frgm.shape[0]
+    indices_mo_occ, indices_mo_virt = make_indices_mo_separate(nocc_frgm, nvirt_frgm)
+    assert len(indices_mo_occ) == len(indices_mo_virt) == nfrgm
+
+    nocc_sum = nocc_frgm.sum()
+    nvirt_sum = nvirt_frgm.sum()
+    # nov_unrestricted = nocc_sum * nvirt_sum
+    # indices_mo_ov_unrestricted = np.asarray(range(nov_unrestricted))
+    pairs_good = []
+    for ifrg in range(nfrgm):
+        pairs_good.extend([(i, a) for i in indices_mo_occ[ifrg] for a in indices_mo_virt[ifrg]])
+    # print('pairs_good')
+    # print(pairs_good)
+    indices_good = [(pair[0]*nvirt_sum + pair[1] - nocc_sum) for pair in pairs_good]
+    # print('indices_good')
+    # print(indices_good)
+    # Now form the opposite (disallowed) pairs as the difference
+    # between all (unrestricted) pairs and the allowed pairs.
+    # indices_bad = [i for i in range(nocc_sum * nvirt_sum) if i not in indices_good]
+    # print('indices_bad')
+    # print(indices_bad)
+    return np.asarray(indices_good)
+
+
+def make_indices_mo_restricted_local_occ_all_virt(nocc_frgm, nvirt_frgm):
+    assert nocc_frgm.shape == nvirt_frgm.shape
+    assert len(nocc_frgm.shape) == 1
+    nfrgm = nocc_frgm.shape[0]
+    indices_mo_occ, indices_mo_virt = make_indices_mo_separate(nocc_frgm, nvirt_frgm)
+    assert len(indices_mo_occ) == len(indices_mo_virt) == nfrgm
+
+    nocc_sum = nocc_frgm.sum()
+    nvirt_sum = nvirt_frgm.sum()
+    norb = nocc_sum + nvirt_sum
+    pairs_good = []
+    indices_good = []
+    for ifrg in range(nfrgm):
+        pairs_good.append([(i, a)
+                           for i in indices_mo_occ[ifrg]
+                           for a in range(nocc_sum, norb)])
+        indices_good.append(np.array([(pair[0]*nvirt_sum + pair[1] - nocc_sum)
+                                      for pair in pairs_good[ifrg]]))
+    for ifrg in range(nfrgm):
+        assert len(pairs_good[ifrg]) == (nocc_frgm[ifrg] * nvirt_sum)
+        assert len(indices_good[ifrg]) == (nocc_frgm[ifrg] * nvirt_sum)
+    # indices_good = [(pair[0]*nvirt_sum + pair[1] - nocc_sum) for pair in pairs_good]
+    # return np.asarray(indices_good)
+    return indices_good
 
 
 def make_index_arrays_into_block(iarray1, iarray2):
@@ -324,6 +395,8 @@ if __name__ == '__main__':
     indices_mo_occ, indices_mo_virt = make_indices_mo_separate(nocc_frgm, nvirt_frgm)
     print(indices_mo_occ)
     print(indices_mo_virt)
+    _, _ = make_indices_mo_restricted(nocc_frgm, nvirt_frgm)
+    _, _ = make_indices_mo_restricted_local_occ_all_virt(nocc_frgm, nvirt_frgm)
 
     # print('MO energies')
     # print(E)

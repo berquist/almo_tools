@@ -56,6 +56,14 @@ int main()
     std::cout << dashes << std::endl;
     std::cout << "indices_ao" << std::endl;
     std::cout << indices_ao << std::endl;
+
+    integrals.print("integrals");
+    arma::mat integrals_masked;
+    make_masked_mat(integrals_masked, integrals, indices_ao);
+    integrals_masked.print("integrals (AO-masked)");
+
+    std::cout << dashes << std::endl;
+
     // each element of the pair is (o, v), where o -> (oI, oJ, oK, ...) and v -> (vI, vJ, vK, ...)
     std::cout << "indices_mo_separate" << std::endl;
     std::cout << indices_mo_separate << std::endl;
@@ -67,12 +75,19 @@ int main()
     std::cout << "indices_mo_virt" << std::endl;
     std::cout << indices_mo_virt << std::endl;
 
-    std::cout << dashes << std::endl;
+    // C.print("C");
+    const arma::mat integrals_mo = C.t() * integrals * C;
+    integrals_mo.print("integrals (MO)");
+    arma::mat integrals_mo_masked;
+    make_masked_mat(integrals_mo_masked, integrals_mo, indices_mo_combined);
+    integrals_mo_masked.print("integrals (MO masked)");
+    const arma::mat integrals_mo_from_masked_ao = C.t() * integrals_masked * C;
+    integrals_mo_from_masked_ao.print("integrals (MO, from masked AO)");
+    arma::mat integrals_mo_masked_from_masked_ao;
+    make_masked_mat(integrals_mo_masked_from_masked_ao, integrals_mo_from_masked_ao, indices_mo_combined);
+    integrals_mo_masked_from_masked_ao.print("integrals (MO masked, from masked AO)");
 
-    integrals.print("integrals");
-    arma::mat integrals_masked;
-    make_masked_mat(integrals_masked, integrals, indices_ao);
-    integrals_masked.print("integrals (AO-masked)");
+    std::cout << dashes << std::endl;
 
     const arma::uvec indices_mo_restricted = make_indices_mo_restricted(nocc_frgm, nvirt_frgm);
 
@@ -84,12 +99,8 @@ int main()
     std::cout << "indices_mo_restricted_local_occ_all_virt" << std::endl;
     std::cout << indices_mo_restricted_local_occ_all_virt << std::endl;
 
-    std::cout << dashes << std::endl;
-
-    // C.print("C");
     const arma::mat integrals_ov = C.cols(0, nocc_tot - 1).t() * integrals * C.cols(nocc_tot, norb_tot - 1);
     // integrals_ov.print("integrals_ov");
-
     arma::vec integrals_ov_vec(integrals_ov.n_elem);
     repack_matrix_to_vector(integrals_ov_vec, integrals_ov);
     std::cout << "integrals_ov_vec" << std::endl;
@@ -113,6 +124,8 @@ int main()
                   << std::setw(12) << std::fixed
                   << std::showpoint << std::setprecision(6)
                   << integrals_ov_vec_masked(i) << std::endl;
+
+    std::cout << dashes << std::endl;
 
     // // std::cout << "Testing non-contiguous view along rows, 1 selected column." << std::endl;
     // arma::imat m(nocc_tot * nvirt_tot, 4, arma::fill::zeros);

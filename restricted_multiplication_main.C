@@ -12,6 +12,7 @@ int main()
     arma::mat C;
     // assume that these are the projected ALMOs
     C.load("C.dat");
+    C.print("C");
     arma::mat integrals;
     integrals.load("integrals.dat");
 
@@ -75,7 +76,6 @@ int main()
     std::cout << "indices_mo_virt" << std::endl;
     std::cout << indices_mo_virt << std::endl;
 
-    // C.print("C");
     const arma::mat integrals_mo = C.t() * integrals * C;
     integrals_mo.print("integrals (MO)");
     arma::mat integrals_mo_masked;
@@ -99,8 +99,9 @@ int main()
     std::cout << "indices_mo_restricted_local_occ_all_virt" << std::endl;
     std::cout << indices_mo_restricted_local_occ_all_virt << std::endl;
 
-    const arma::mat integrals_ov = C.cols(0, nocc_tot - 1).t() * integrals * C.cols(nocc_tot, norb_tot - 1);
-    // integrals_ov.print("integrals_ov");
+    // const arma::mat integrals_ov = C.cols(0, nocc_tot - 1).t() * integrals * C.cols(nocc_tot, norb_tot - 1);
+    const arma::mat integrals_ov = C.cols(nocc_tot, norb_tot - 1).t() * integrals * C.cols(0, nocc_tot - 1);
+    integrals_ov.print("integrals_ov");
     arma::vec integrals_ov_vec(integrals_ov.n_elem);
     repack_matrix_to_vector(integrals_ov_vec, integrals_ov);
     std::cout << "integrals_ov_vec" << std::endl;
@@ -124,6 +125,13 @@ int main()
                   << std::setw(12) << std::fixed
                   << std::showpoint << std::setprecision(6)
                   << integrals_ov_vec_masked(i) << std::endl;
+
+    arma::mat integrals_ov_masked_from_vec(arma::size(integrals_ov));
+    repack_vector_to_matrix(integrals_ov_masked_from_vec, integrals_ov_vec_masked);
+    integrals_ov_masked_from_vec.print("integrals_ov (masked from vector)");
+    // arma::mat integrals_ov_from_masked_mo = C.cols(0, nocc_tot - 1).t() * integrals_mo_masked * C.cols(nocc_tot, norb_tot - 1);
+    arma::mat integrals_ov_from_masked_mo = C.cols(nocc_tot, norb_tot - 1).t() * integrals_mo_masked * C.cols(0, nocc_tot - 1);
+    integrals_ov_from_masked_mo.print("integrals_ov (from masked MO)");
 
     std::cout << dashes << std::endl;
 

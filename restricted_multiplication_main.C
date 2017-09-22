@@ -1,3 +1,5 @@
+#include <iomanip> // setw
+
 #include "utils.h"
 #include "indices.h"
 #include "printing.h"
@@ -54,8 +56,10 @@ int main()
     std::cout << dashes << std::endl;
     std::cout << "indices_ao" << std::endl;
     std::cout << indices_ao << std::endl;
+    // each element of the pair is (o, v), where o -> (oI, oJ, oK, ...) and v -> (vI, vJ, vK, ...)
     std::cout << "indices_mo_separate" << std::endl;
     std::cout << indices_mo_separate << std::endl;
+    // each element of the vector is (I, J, K, ...) where I -> [oI vI]
     std::cout << "indices_mo_combined" << std::endl;
     std::cout << indices_mo_combined << std::endl;
     std::cout << "indices_mo_occ" << std::endl;
@@ -65,10 +69,10 @@ int main()
 
     std::cout << dashes << std::endl;
 
-    // integrals.print("integrals");
+    integrals.print("integrals");
     arma::mat integrals_masked;
     make_masked_mat(integrals_masked, integrals, indices_ao);
-    // integrals_masked.print("integrals (AO-masked)");
+    integrals_masked.print("integrals (AO-masked)");
 
     const arma::uvec indices_mo_restricted = make_indices_mo_restricted(nocc_frgm, nvirt_frgm);
 
@@ -88,13 +92,27 @@ int main()
 
     arma::vec integrals_ov_vec(integrals_ov.n_elem);
     repack_matrix_to_vector(integrals_ov_vec, integrals_ov);
-    // integrals_ov_vec.print("integrals_ov_vec");
+    std::cout << "integrals_ov_vec" << std::endl;
+    for (size_t i = 0; i < integrals_ov.n_elem; i++)
+        std::cout << " "
+                  << std::setw(3) << i
+                  << " "
+                  << std::setw(12) << std::fixed
+                  << std::showpoint << std::setprecision(6)
+                  << integrals_ov_vec(i) << std::endl;
     // We don't want to select only the allowed indices, but have the
     // full set of indices and zero out the disallowed indices.
     // integrals_ov_vec(indices_mo_restricted).print("integrals_ov_vec (masked)");
     arma::vec integrals_ov_vec_masked(integrals_ov_vec.n_elem, arma::fill::zeros);
     integrals_ov_vec_masked(indices_mo_restricted) = integrals_ov_vec(indices_mo_restricted);
-    // integrals_ov_vec_masked.print("integrals_ov_vec (masked)");
+    std::cout << "integrals_ov_vec (masked)" << std::endl;
+    for (size_t i = 0; i < integrals_ov.n_elem; i++)
+        std::cout << " "
+                  << std::setw(3) << i
+                  << " "
+                  << std::setw(12) << std::fixed
+                  << std::showpoint << std::setprecision(6)
+                  << integrals_ov_vec_masked(i) << std::endl;
 
     // // std::cout << "Testing non-contiguous view along rows, 1 selected column." << std::endl;
     // arma::imat m(nocc_tot * nvirt_tot, 4, arma::fill::zeros);

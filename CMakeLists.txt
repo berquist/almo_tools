@@ -9,6 +9,7 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 find_package(pybind11)
 
 set(SRC
+    example_class.C
     indices.C
     index_printing.C
     utils.C
@@ -31,6 +32,7 @@ target_link_libraries(almo_tools
 #     SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
 set(EXECUTABLES
+    example_class_main
     restricted_multiplication_main
     )
 

@@ -8,7 +8,7 @@
  */
 
 #include "typedefs.h"
-#include "printing.h"
+#include "index_printing.h"
 
 namespace libresponse {
 
@@ -35,25 +35,33 @@ arma::uvec make_indices_mo_restricted(const arma::uvec &nocc_frgm, const arma::u
 
 type::indices make_indices_mo_restricted_local_occ_all_virt(const arma::uvec &nocc_frgm, const arma::uvec &nvirt_frgm);
 
-/*!
- *
- */
-void make_masked_mat(arma::mat &mm, const arma::mat &m, const type::indices &idxs, double fill_value = 0.0);
+// TODO is is quite general, just concatenation of of a vector of arma
+// vectors
+arma::uvec join(const type::indices &idxs);
+
+void make_masked_mat(arma::mat &mm, const arma::mat &m, const arma::uvec &idxs, double fill_value = 0.0, bool reduce = false);
+
+void make_masked_cube(arma::cube &mc, const arma::mat &c, const arma::uvec &idxs, double fill_value = 0.0, bool reduce = false);
 
 /*!
  *
  */
-void make_masked_mat(arma::cube &mc, const arma::cube &c, const type::indices &idxs, double fill_value = 0.0);
+void make_masked_mat(arma::mat &mm, const arma::mat &m, const type::indices &idxs, double fill_value = 0.0, bool reduce = false);
 
 /*!
  *
  */
-void make_masked_mat(arma::mat &mm, const arma::mat &m, const type::indices &idxs_rows, const type::indices &idxs_cols, double fill_value);
+void make_masked_cube(arma::cube &mc, const arma::cube &c, const type::indices &idxs, double fill_value = 0.0, bool reduce = false);
 
 /*!
  *
  */
-void make_masked_mat(arma::cube &mc, const arma::cube &c, const type::indices &idxs_rows, const type::indices &idxs_cols, double fill_value);
+void make_masked_mat(arma::mat &mm, const arma::mat &m, const type::indices &idxs_rows, const type::indices &idxs_cols, double fill_value, bool reduce = false);
+
+/*!
+ *
+ */
+void make_masked_cube(arma::cube &mc, const arma::cube &c, const type::indices &idxs_rows, const type::indices &idxs_cols, double fill_value, bool reduce = false);
 
 } // namespace libresponse
 

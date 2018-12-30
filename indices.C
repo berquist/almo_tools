@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "indices.h"
-#include "printing.h"
 #include "utils.h"
 
 namespace libresponse {
@@ -61,7 +60,9 @@ type::indices make_indices_mo_combined(const arma::uvec &nocc_frgm, const arma::
     const type::pair_indices p = make_indices_mo_separate(nocc_frgm, nvirt_frgm);
     const size_t nfrgm = nocc_frgm.n_elem;
     for (size_t i = 0; i < nfrgm; i++) {
-        v.push_back(join(p.first[i], p.second[i]));
+        // force qualified name lookup
+        // https://stackoverflow.com/a/7376212
+        v.push_back(::join(p.first[i], p.second[i]));
     }
 
     return v;
@@ -193,74 +194,184 @@ type::indices make_indices_mo_restricted_local_occ_all_virt(const arma::uvec &no
     return v_all;
 }
 
+arma::uvec join(const type::indices &idxs)
+{
+
+    const size_t size = idxs.size();
+    arma::uvec v;
+    if (size == 0) {
+    } else if (size == 1) {
+        v = idxs[0];
+    } else {
+        // for (size_t i = 0; i < size; i++)
+        //     v = ::join(v, idxs[i]);
+        v = idxs[0];
+        arma::uvec x;
+        for (size_t i = 1; i < size; i++) {
+            const arma::uvec w = idxs[i];
+            const size_t lw = w.n_elem;
+            const size_t lv = v.n_elem;
+            x.set_size(lv + lw);
+            x.subvec(0, lv - 1) = v;
+            x.subvec(lv, lv + lw - 1) = w;
+            v = x;
+        }
+    }
+
+    return v;
+
+}
+
+void make_masked_mat(arma::mat &mm, const arma::mat &m, const arma::uvec &idxs, double fill_value, bool reduce)
+{
+
+    if (reduce) {
+
+        const size_t dim = idxs.n_elem;
+        mm.set_size(dim, dim);
+        mm.fill(fill_value);
+
+        mm = m.submat(idxs, idxs);
+
+    } else {
+
+        mm.set_size(m.n_rows, m.n_cols);
+        mm.fill(fill_value);
+
+        mm.submat(idxs, idxs) = m.submat(idxs, idxs);
+
+    }
+
+    return;
+
+}
+
+void make_masked_cube(arma::cube &mc, const arma::cube &c, const arma::uvec &idxs, double fill_value, bool reduce)
+{
+
+    if (reduce) {
+        const size_t dim = idxs.n_elem;
+        mc.set_size(dim, dim, c.n_slices);
+    } else
+        mc.set_size(c.n_rows, c.n_cols, c.n_slices);
+
+    for (size_t ns = 0; ns < c.n_slices; ns++) {
+        make_masked_mat(mc.slice(ns), c.slice(ns), idxs, fill_value, reduce);
+    }
+
+    return;
+
+}
+
 // fill then copy, rather than copy then fill
-void make_masked_mat(arma::mat &mm, const arma::mat &m, const type::indices &idxs, double fill_value)
+void make_masked_mat(arma::mat &mm, const arma::mat &m, const type::indices &idxs, double fill_value, bool reduce)
 {
 
     if (idxs.empty())
         throw std::runtime_error("idxs.empty()");
 
-    mm.set_size(m.n_rows, m.n_cols);
-    mm.fill(fill_value);
-
     const size_t nblocks = idxs.size();
 
-    for (size_t i = 0; i < nblocks; i++) {
-        // submat takes 2 uvecs and automatically forms the correct
-        // outer product between them for indexing
-        mm.submat(idxs[i], idxs[i]) = m.submat(idxs[i], idxs[i]);
+    if (reduce) {
+
+        const arma::uvec idxs_joined = join(idxs);
+        const size_t dim = idxs_joined.n_elem;
+
+        mm.set_size(dim, dim);
+        mm.fill(fill_value);
+
+        mm = m.submat(idxs_joined, idxs_joined);
+
+    } else {
+
+        mm.set_size(m.n_rows, m.n_cols);
+        mm.fill(fill_value);
+
+        for (size_t i = 0; i < nblocks; i++) {
+            // submat takes 2 uvecs and automatically forms the correct
+            // outer product between them for indexing
+            mm.submat(idxs[i], idxs[i]) = m.submat(idxs[i], idxs[i]);
+        }
+
     }
 
     return;
 
 }
 
-void make_masked_mat(arma::cube &mc, const arma::cube &c, const type::indices &idxs, double fill_value)
+// TODO template over index type?
+void make_masked_cube(arma::cube &mc, const arma::cube &c, const type::indices &idxs, double fill_value, bool reduce)
 {
 
-    mc.set_size(c.n_rows, c.n_cols, c.n_slices);
+    if (reduce) {
+        // urgh, my kingdom for a list comprehension
+        const size_t dim = join(idxs).n_elem;
+        mc.set_size(dim, dim, c.n_slices);
+    } else
+        mc.set_size(c.n_rows, c.n_cols, c.n_slices);
 
     for (size_t ns = 0; ns < c.n_slices; ns++) {
-        make_masked_mat(mc.slice(ns), c.slice(ns), idxs, fill_value);
+        make_masked_mat(mc.slice(ns), c.slice(ns), idxs, fill_value, reduce);
     }
 
     return;
 
 }
 
-void make_masked_mat(arma::mat &mm, const arma::mat &m, const type::indices &idxs_rows, const type::indices &idxs_cols, double fill_value)
+void make_masked_mat(arma::mat &mm, const arma::mat &m, const type::indices &idxs_rows, const type::indices &idxs_cols, double fill_value, bool reduce)
 {
 
     if (idxs_rows.empty() || idxs_cols.empty())
         throw std::runtime_error("idxs_rows.empty() || idxs_cols.empty()");
 
-    mm.set_size(m.n_rows, m.n_cols);
-    mm.fill(fill_value);
+    if (reduce) {
 
-    // this is an artificial constraint, there's probably a better way
-    // of doing this
-    if (idxs_rows.size() != idxs_cols.size())
-        throw std::runtime_error("idxs_rows.size() != idxs_cols.size()");
+        const arma::uvec idxs_rows_joined = join(idxs_rows);
+        const size_t dim_rows = idxs_rows_joined.n_elem;
+        const arma::uvec idxs_cols_joined = join(idxs_cols);
+        const size_t dim_cols = idxs_cols_joined.n_elem;
 
-    const size_t nblocks = idxs_rows.size();
+        mm.set_size(dim_rows, dim_cols);
+        mm.fill(fill_value);
 
-    for (size_t i = 0; i < nblocks; i++) {
-        // submat takes 2 uvecs and automatically forms the correct
-        // outer product between them for indexing
-        mm.submat(idxs_rows[i], idxs_cols[i]) = m.submat(idxs_rows[i], idxs_cols[i]);
+        mm = m.submat(idxs_rows_joined, idxs_cols_joined);
+
+    } else {
+
+        mm.set_size(m.n_rows, m.n_cols);
+        mm.fill(fill_value);
+
+        // this is an artificial constraint, there's probably a better way
+        // of doing this
+        if (idxs_rows.size() != idxs_cols.size())
+            throw std::runtime_error("idxs_rows.size() != idxs_cols.size()");
+
+        const size_t nblocks = idxs_rows.size();
+
+        for (size_t i = 0; i < nblocks; i++) {
+            // submat takes 2 uvecs and automatically forms the correct
+            // outer product between them for indexing
+            mm.submat(idxs_rows[i], idxs_cols[i]) = m.submat(idxs_rows[i], idxs_cols[i]);
+        }
+
     }
 
     return;
 
 }
 
-void make_masked_mat(arma::cube &mc, const arma::cube &c, const type::indices &idxs_rows, const type::indices &idxs_cols, double fill_value)
+void make_masked_cube(arma::cube &mc, const arma::cube &c, const type::indices &idxs_rows, const type::indices &idxs_cols, double fill_value, bool reduce)
 {
 
-    mc.set_size(c.n_rows, c.n_cols, c.n_slices);
+    if (reduce) {
+        const size_t dim_rows = join(idxs_rows).n_elem;
+        const size_t dim_cols = join(idxs_cols).n_elem;
+        mc.set_size(dim_rows, dim_cols, c.n_slices);
+    } else
+        mc.set_size(c.n_rows, c.n_cols, c.n_slices);
 
     for (size_t ns = 0; ns < c.n_slices; ns++) {
-        make_masked_mat(mc.slice(ns), c.slice(ns), idxs_rows, idxs_cols, fill_value);
+        make_masked_mat(mc.slice(ns), c.slice(ns), idxs_rows, idxs_cols, fill_value, reduce);
     }
 
     return;

@@ -10,15 +10,14 @@ find_package(pybind11)
 
 set(SRC
     indices.C
-    printing.C
-    pybind.C
+    index_printing.C
     utils.C
     )
 
 add_library(almo_tools SHARED ${SRC})
 target_link_libraries(almo_tools
     ${ARMADILLO_LIBRARIES}
-    ${PYTHON_LIBRARIES}
+    # ${PYTHON_LIBRARIES}
     )
 # add_library(almo_tools MODULE ${SRC})
 # target_link_libraries(almo_tools

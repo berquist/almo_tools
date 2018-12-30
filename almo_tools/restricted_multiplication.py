@@ -161,8 +161,13 @@ def make_index_arrays_into_block(iarray1, iarray2):
 def extract_block_from_matrix(mat, iarray1, iarray2):
     """"""
     assert len(mat.shape) == 2
-    ids = make_index_arrays_into_block(iarray1, iarray2)
-    return mat[ids].reshape(len(iarray1), len(iarray2))
+    if len(iarray1) == 0 or len(iarray2) == 0:
+        # TODO there should be a better way of representing a
+        # 0-element array
+        return None
+    else:
+        ids = make_index_arrays_into_block(iarray1, iarray2)
+        return mat[ids].reshape(len(iarray1), len(iarray2))
 
 
 def form_vec_energy_differences(moene_i, moene_a):

@@ -2,7 +2,7 @@
 
 #include "utils.h"
 #include "indices.h"
-#include "printing.h"
+#include "index_printing.h"
 
 using namespace libresponse;
 

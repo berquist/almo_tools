@@ -15,6 +15,11 @@ set(SRC
     utils.C
     )
 
+set(SRC_PYBIND
+    pybind.C
+    ${SRC}
+    )
+
 add_library(almo_tools SHARED ${SRC})
 target_link_libraries(almo_tools
     ${ARMADILLO_LIBRARIES}
@@ -41,7 +46,7 @@ foreach(EXECUTABLE ${EXECUTABLES})
     target_link_libraries(${EXECUTABLE} almo_tools)
 endforeach()
 
-pybind11_add_module(almo_tools_cxx MODULE ${SRC})
+pybind11_add_module(almo_tools_cxx MODULE ${SRC_PYBIND})
 target_link_libraries(almo_tools_cxx PRIVATE ${ARMADILLO_LIBRARIES})
 
 enable_testing()
